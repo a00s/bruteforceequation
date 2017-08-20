@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import sun.security.util.Length;
@@ -14,19 +15,14 @@ public class EquationMaker {
     List<String> sinais = new ArrayList<>();
     List<String> funcoes = new ArrayList<>();
     LinkedList<String> equacao = new LinkedList<>();
+    LinkedHashSet<LinkedList> listatemporaria = new LinkedHashSet<>();
 
     public static void main(String[] args) {
         EquationMaker equation = new EquationMaker();
         equation.startValores();
 //        equation.start();
-
 //        equation.teste();
         equation.montaParenteses(3);
-    }
-
-    public void teste4(String t1) {
-        t1 = "B";
-
     }
 
     public void montaParenteses(int tamanho) {
@@ -67,85 +63,145 @@ public class EquationMaker {
             Collections.sort(posicoes);
             int contador = 0;
             for (Integer y : posicoes) {
-                equacaofinal.add(y+contador,"x");
+                equacaofinal.add(y + contador, "x");
                 contador++;
-            }            
+            }
+            p("---- ");
             imprimeEquacao(equacaofinal);
+            List<String> eqtemp = new ArrayList<>();
+            adicionaSinais3(eqtemp, equacaofinal, 0, tamanho - 1);
             pn("----------------------------------");
         }
     }
     
-    public void adicionaSinais(List<String> eqfinal, int posicao, int max) {
+//    public void limpaEquacao(List<String> eqfinal2){
+//        for(int i = 1 ; i < eqfinal2.size() ; i++){
+//            if(eqfinal2.get(i).equals("+") && eqfinal2.get(i-1).equals("(")){
+//                pn("Aqui");
+//                eqfinal2.remove(i);
+//                i--;
+//            }
+//        }
+//    }
+
+    public void adicionaSinais3(List<String> eqfinal, List<String> eqoriginal, int posicao, int max) {
         if (posicao > max) {
-
-            if (eqfinal.get(0).equals("+")) {
-                eqfinal.remove(0);
+            int pointer1 = 0;
+            int pointer2 = 0;
+            LinkedList<String> eqfinal2 = new LinkedList<>(eqoriginal);
+            for (String sinal : eqoriginal) {
+                if (sinal.equals("x")) {
+                    eqfinal2.add(pointer2, eqfinal.get(pointer1));
+                    pointer1++;
+                    pointer2++;
+                }
+                pointer2++;
             }
-//            pn(eqfinal.toString());
-            adicionaOperadores(eqfinal, 1);
-        } else {
-            for (String sinal : sinais) {
-                List<String> eqfinal2 = new ArrayList<>(eqfinal);
-                eqfinal2.add(sinal);                
-                adicionaSinais(eqfinal2, posicao + 1, max);
-            }
-        }
-    }
-    
-    public void teste() {
-//        equacao = new LinkedList<>();
-//        equacao.add("A");
-//        equacao.add("B");
-//        equacao.add(2, "C");
-//        p(equacao.toString());         
-        List<String> listainicial = new ArrayList<>();
-        //adicionaSinais(listainicial, 1, 2); // funcionando
-    }
-
-    
-    
-    public void adicionaSinais2(List<String> eqfinal, int posicao, int max) {
-        if (posicao > max) {
-
-            if (eqfinal.get(0).equals("+")) {
-                eqfinal.remove(0);
-            }
-//            pn(eqfinal.toString());
-            adicionaOperadores(eqfinal, 1);
+            imprimeEquacao(eqfinal2);      
+            List<String> eqtemp = new ArrayList<>();
+            adicionaOperadores(eqtemp, eqfinal2, 0, max);
         } else {
             for (String sinal : sinais) {
                 List<String> eqfinal2 = new ArrayList<>(eqfinal);
                 eqfinal2.add(sinal);
-                eqfinal2.add("x");
-                adicionaSinais2(eqfinal2, posicao + 1, max);
+                adicionaSinais3(eqfinal2, eqoriginal, posicao + 1, max);
             }
         }
     }
 
-    public void adicionaOperadores(List<String> eqfinal, int posicao) {
-        if (posicao == eqfinal.size()) {
-            pn(eqfinal.toString());
+    public void adicionaOperadores(List<String> eqfinal, List<String> eqoriginal, int posicao, int max) {
+        if (posicao > max) {
+            int pointer1 = 0;
+            int pointer2 = 0;
+            String lastchar = "";
+            LinkedList<String> eqfinal2 = new LinkedList<>(eqoriginal);
+            for (String sinal : eqoriginal) {
+                if (sinal.equals("(") && pointer2 > 0 && !lastchar.equals("(")) {
+                    eqfinal2.add(pointer2, eqfinal.get(pointer1));
+                    pointer1++;
+                    pointer2++;
+                } 
+                lastchar = sinal;
+                pointer2++;
+            }
+            imprimeEquacao(eqfinal2);
+//            adicionaOperadores(eqtemp, eqfinal2, 0, max);
         } else {
-            for (String oper : operadores) {
+            for (String operador : operadores) {
                 List<String> eqfinal2 = new ArrayList<>(eqfinal);
-                if (!oper.equals("")) {
-                    // validando
-                    if (!eqfinal2.get(posicao - 1).equals("+") && !eqfinal2.get(posicao - 1).equals("-")) {
-                        eqfinal2.add(posicao, oper);
-                        if (eqfinal2.get(posicao + 1).equals("+")) {
-                            eqfinal2.remove(posicao + 1);
-                        }
-                        adicionaOperadores(eqfinal2, posicao + 2);
-                    }
-                } else {
-                    adicionaOperadores(eqfinal2, posicao + 1);
-                }
-
-//                pn("EF:"+eqfinal2.toString());
-//                eqfinal2.add("x");
+                eqfinal2.add(operador);
+                adicionaOperadores(eqfinal2, eqoriginal, posicao + 1, max);
             }
         }
     }
+
+//    public void adicionaSinais(List<String> eqfinal, int posicao, int max) {
+//        if (posicao > max) {
+//
+//            if (eqfinal.get(0).equals("+")) {
+//                eqfinal.remove(0);
+//            }
+////            pn(eqfinal.toString());
+//            adicionaOperadores(eqfinal, 1);
+//        } else {
+//            for (String sinal : sinais) {
+//                List<String> eqfinal2 = new ArrayList<>(eqfinal);
+//                eqfinal2.add(sinal);                
+//                adicionaSinais(eqfinal2, posicao + 1, max);
+//            }
+//        }
+//    }
+//    public void teste() {
+////        equacao = new LinkedList<>();
+////        equacao.add("A");
+////        equacao.add("B");
+////        equacao.add(2, "C");
+////        p(equacao.toString());         
+//        List<String> listainicial = new ArrayList<>();
+//        //adicionaSinais(listainicial, 1, 2); // funcionando
+//    }
+
+//    public void adicionaSinais2(List<String> eqfinal, int posicao, int max) {
+//        if (posicao > max) {
+//
+//            if (eqfinal.get(0).equals("+")) {
+//                eqfinal.remove(0);
+//            }
+//            pn(eqfinal.toString());
+////            adicionaOperadores(eqfinal, 1);
+//        } else {
+//            for (String sinal : sinais) {
+//                List<String> eqfinal2 = new ArrayList<>(eqfinal);
+//                eqfinal2.add(sinal);
+//                eqfinal2.add("x");
+//                adicionaSinais2(eqfinal2, posicao + 1, max);
+//            }
+//        }
+//    }
+//    public void adicionaOperadores(List<String> eqfinal, int posicao) {
+//        if (posicao == eqfinal.size()) {
+//            pn(eqfinal.toString());
+//        } else {
+//            for (String oper : operadores) {
+//                List<String> eqfinal2 = new ArrayList<>(eqfinal);
+//                if (!oper.equals("")) {
+//                    // validando
+//                    if (!eqfinal2.get(posicao - 1).equals("+") && !eqfinal2.get(posicao - 1).equals("-")) {
+//                        eqfinal2.add(posicao, oper);
+//                        if (eqfinal2.get(posicao + 1).equals("+")) {
+//                            eqfinal2.remove(posicao + 1);
+//                        }
+//                        adicionaOperadores(eqfinal2, posicao + 2);
+//                    }
+//                } else {
+//                    adicionaOperadores(eqfinal2, posicao + 1);
+//                }
+//
+////                pn("EF:"+eqfinal2.toString());
+////                eqfinal2.add("x");
+//            }
+//        }
+//    }
 
 //    public void recuroper(String eqfinal, int posicao, int max) {
 //        if (posicao > max) {
@@ -167,6 +223,7 @@ public class EquationMaker {
 //                return recuroper(eqfinal, max);
 //            }
 //        }
+//        return null;
 //    }
     public void startFuncoes() {
 //        funcoes.add("log"); // log2(8) = 2*2*2        
