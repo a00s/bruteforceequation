@@ -1,11 +1,31 @@
+/*
+  Made by Thiago Benazzi Maia to generate equations in a bruteforce mode
+
+########### For MySQL ##########
+ CREATE TABLE `equations` (
+   `id` bigint(20) NOT NULL AUTO_INCREMENT,
+   `equation` varchar(255) NOT NULL,
+   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   PRIMARY KEY (`id`),
+   UNIQUE KEY `equation` (`equation`)
+ ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+ */
 package equationmaker;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class EquationMaker {
 
@@ -15,16 +35,33 @@ public class EquationMaker {
     LinkedList<String> equacao = new LinkedList<>();
     LinkedHashSet<LinkedList> listatemporaria = new LinkedHashSet<>();
     int totalequations = 0;
-    
+    int totalequationscount = 0;
+    Connection conn = null;
+    Statement stmtfornecer;
+    PreparedStatement sqlseguro;
+    // -------------- CONFIG ----------------
+    String mysql_user = "root";
+    String mysql_pass = "password";
+    String mysql_host = "127.0.0.1";
+    String mysql_database = "fyequation";
+    int equations_size_start = 1; // how many X the equation will start having
+    int equations_size_end = 3; // how many X the equation will finish having
+
     public static void main(String[] args) {
         EquationMaker equation = new EquationMaker();
         equation.startValores();
         equation.start();
     }
-    
+
     public void start() {
-        for(int i = 1; i < 4; i++){
+        conectar_mysql(mysql_database);
+        for (int i = equations_size_start; i <= equations_size_end; i++) {
             montaParenteses(i);
+        }
+        try {
+            conn.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(EquationMaker.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -70,19 +107,19 @@ public class EquationMaker {
                 contador++;
             }
             List<String> eqtemp = new ArrayList<>();
-            adicionaSinais3(eqtemp, equacaofinal, 0, tamanho - 1);            
-            for(LinkedList<String> equacaolocal : listatemporaria){
-                p("************ ");
-                imprimeEquacao(equacaolocal);
+            adicionaSinais3(eqtemp, equacaofinal, 0, tamanho - 1);
+            for (LinkedList<String> equacaolocal : listatemporaria) {
+//                p("************ ");
+//                imprimeEquacao(equacaolocal);
                 List<String> eqtemp2 = new ArrayList<>();
                 adicionaFuncoes(eqtemp2, equacaolocal, 0, tamanho - 1);
             }
             listatemporaria = new LinkedHashSet<>();
-            
-            pn("----------------------------------");
+
+//            pn("----------------------------------");
         }
     }
-    
+
     public void adicionaFuncoes(List<String> eqfinal, List<String> eqoriginal, int posicao, int max) {
         if (posicao > max) {
             int pointer1 = 0;
@@ -93,12 +130,18 @@ public class EquationMaker {
                     eqfinal2.add(pointer2, eqfinal.get(pointer1));
                     pointer1++;
                     pointer2++;
-                } 
+                }
                 pointer2++;
             }
             totalequations++;
-            p(totalequations+")    ");
-            imprimeEquacao(eqfinal2);
+//            totalequationscount++;
+//            if(totalequationscount == 100000){
+//            p(totalequations + ")    ");
+//                 totalequationscount = 0;
+//            imprimeEquacao(eqfinal2);
+            saveEquacao(eqfinal2);
+//            }            
+
         } else {
             for (String funcao : funcoes) {
                 List<String> eqfinal2 = new ArrayList<>(eqfinal);
@@ -107,7 +150,7 @@ public class EquationMaker {
             }
         }
     }
-    
+
     public void adicionaSinais3(List<String> eqfinal, List<String> eqoriginal, int posicao, int max) {
         if (posicao > max) {
             int pointer1 = 0;
@@ -121,7 +164,8 @@ public class EquationMaker {
                 }
                 pointer2++;
             }
-            imprimeEquacao(eqfinal2);      
+//            imprimeEquacao(eqfinal2);      
+            saveEquacao(eqfinal2);
             List<String> eqtemp = new ArrayList<>();
             adicionaOperadores(eqtemp, eqfinal2, 0, max);
         } else {
@@ -144,7 +188,7 @@ public class EquationMaker {
                     eqfinal2.add(pointer2, eqfinal.get(pointer1));
                     pointer1++;
                     pointer2++;
-                } 
+                }
                 lastchar = sinal;
                 pointer2++;
             }
@@ -167,21 +211,28 @@ public class EquationMaker {
         operadores.add("*");
         operadores.add("/");
         operadores.add("^");
-        
+
         funcoes.add("");
-        funcoes.add("log"); // log2(8) = 2*2*2        
-        funcoes.add("sqrt");
-        funcoes.add("mod"); // modulo, remove negativo
-        funcoes.add("logn"); //  e (Euler's Number)        
-        funcoes.add("tan");
-        funcoes.add("sin");
-        funcoes.add("cos");
-        funcoes.add("atan");
-        funcoes.add("asin");
-        funcoes.add("acos");
-        funcoes.add("tanh");
-        funcoes.add("sinh");
-        funcoes.add("cosh");
+        funcoes.add("sin");	// sine function
+        funcoes.add("cos");	// cosine function
+        funcoes.add("tan");	// tangens function
+        funcoes.add("asin");	// arcus sine function
+        funcoes.add("acos");	// arcus cosine function
+        funcoes.add("atan");	// arcus tangens function
+        funcoes.add("sinh");	// hyperbolic sine function
+        funcoes.add("cosh");	// hyperbolic cosine
+        funcoes.add("tanh");	// hyperbolic tangens function
+        funcoes.add("asinh");	// hyperbolic arcus sine function
+        funcoes.add("acosh");	// hyperbolic arcus tangens function
+        funcoes.add("atanh");	// hyperbolic arcur tangens function
+        funcoes.add("log2");	// logarithm to the base 2
+        funcoes.add("log10");	// logarithm to the base 10
+        funcoes.add("log");	// logarithm to base e (2.71828...)
+        funcoes.add("ln");	// logarithm to base e (2.71828...)
+        funcoes.add("exp");	// e raised to the power of x
+        funcoes.add("sqrt");	// square root of a value
+        funcoes.add("sign");	// sign function -1 if x<0; 1 if x>0
+
         //Trigonometry (  cot, csc, sec, d2r, r2d, d2g, g2d, hyp) 
     }
 
@@ -219,11 +270,42 @@ public class EquationMaker {
         pn("");
     }
 
+    public void saveEquacao(LinkedList<String> equacaol) {
+        String eqf = "";
+        for (String eq : equacaol) {
+            eqf += eq;
+        }
+        pn(totalequations + ") " + eqf);
+        String sql = "INSERT INTO equations SET equation = ?";
+        try {
+            sqlseguro = conn.prepareStatement(sql);
+            sqlseguro.setString(1, eqf);
+            sqlseguro.execute();
+            sqlseguro.close();
+        } catch (SQLException ex) {
+            pn(ex.toString());
+//            Logger.getLogger(EquationMaker.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     private void pn(String texto) {
         System.out.println(texto);
     }
 
     private void p(String texto) {
         System.out.print(texto);
+    }
+
+    public void conectar_mysql(String base) {
+        try {
+            String teste = "jdbc:mysql://" + mysql_host + ":3306/"+base+"?autoReconnect=true&";
+            conn = DriverManager.getConnection(teste.toString(), mysql_user, mysql_pass);
+            stmtfornecer = (Statement) conn.createStatement(
+                    ResultSet.TYPE_SCROLL_SENSITIVE,
+                    ResultSet.CONCUR_READ_ONLY);
+            conn.setAutoCommit(true);
+        } catch (Throwable erro) {
+            System.out.println("Erro na conexao:" + erro);
+        }
     }
 }
