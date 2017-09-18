@@ -40,11 +40,11 @@ public class EquationMaker {
     Statement stmtfornecer;
     PreparedStatement sqlseguro;
     // -------------- CONFIG ----------------
-    String mysql_user = "root";
-    String mysql_pass = "password";
+    String mysql_user = "fyequation";
+    String mysql_pass = "testando";
     String mysql_host = "127.0.0.1";
     String mysql_database = "fyequation";
-    int equations_size_start = 1; // how many X the equation will start having
+    int equations_size_start = 3; // how many X the equation will start having
     int equations_size_end = 3; // how many X the equation will finish having
 
     public static void main(String[] args) {
@@ -103,7 +103,7 @@ public class EquationMaker {
             Collections.sort(posicoes);
             int contador = 0;
             for (Integer y : posicoes) {
-                equacaofinal.add(y + contador, "x");
+                equacaofinal.add(y + contador, "X");
                 contador++;
             }
             List<String> eqtemp = new ArrayList<>();
@@ -157,7 +157,7 @@ public class EquationMaker {
             int pointer2 = 0;
             LinkedList<String> eqfinal2 = new LinkedList<>(eqoriginal);
             for (String sinal : eqoriginal) {
-                if (sinal.equals("x")) {
+                if (sinal.equals("X")) {
                     eqfinal2.add(pointer2, eqfinal.get(pointer1));
                     pointer1++;
                     pointer2++;
